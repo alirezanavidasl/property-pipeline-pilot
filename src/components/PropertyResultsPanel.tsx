@@ -1,7 +1,10 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle, ExternalLink, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 export interface PropertyResult {
   name: string;
@@ -15,13 +18,46 @@ interface PropertyResultsPanelProps {
   properties: PropertyResult[];
   equipmentName: string;
   modelNumber: string;
+  onRerunProperties?: (propertyNames: string[]) => void;
 }
 
-export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber }: PropertyResultsPanelProps) => {
+export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber, onRerunProperties }: PropertyResultsPanelProps) => {
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 90) return 'bg-green-100 text-green-800';
     if (confidence >= 70) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
+  };
+
+  // Properties with low confidence (<80%) or missing common properties
+  const lowConfidenceProperties = properties.filter(p => p.confidence < 80);
+  const commonMissingProperties = [
+    "Operating Temperature",
+    "IP Rating", 
+    "Noise Level",
+    "Efficiency Rating",
+    "Maintenance Schedule"
+  ].filter(name => !properties.some(p => p.name === name));
+
+  const feedbackProperties = [
+    ...lowConfidenceProperties.map(p => ({ name: p.name, type: 'low-confidence' as const })),
+    ...commonMissingProperties.map(name => ({ name, type: 'missing' as const }))
+  ];
+
+  const handlePropertyToggle = (propertyName: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProperties(prev => [...prev, propertyName]);
+    } else {
+      setSelectedProperties(prev => prev.filter(name => name !== propertyName));
+    }
+  };
+
+  const handleRerun = () => {
+    if (selectedProperties.length > 0 && onRerunProperties) {
+      onRerunProperties(selectedProperties);
+      setSelectedProperties([]);
+    }
   };
 
   return (
@@ -62,6 +98,47 @@ export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber }:
       {properties.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <p>No properties found yet. Scraping in progress...</p>
+        </div>
+      )}
+
+      {feedbackProperties.length > 0 && (
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Improve Results
+          </h4>
+          <p className="text-sm text-gray-600 mb-4">
+            Select properties to re-run the pipeline for better accuracy or missing data:
+          </p>
+          
+          <div className="space-y-2 mb-4">
+            {feedbackProperties.map((property) => (
+              <div key={property.name} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                <Checkbox
+                  checked={selectedProperties.includes(property.name)}
+                  onCheckedChange={(checked) => handlePropertyToggle(property.name, checked as boolean)}
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-900">{property.name}</span>
+                  <Badge 
+                    variant="outline" 
+                    className={`ml-2 ${property.type === 'missing' ? 'border-orange-300 text-orange-600' : 'border-red-300 text-red-600'}`}
+                  >
+                    {property.type === 'missing' ? 'Missing' : 'Low Confidence'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <Button 
+            onClick={handleRerun}
+            disabled={selectedProperties.length === 0}
+            className="w-full"
+            variant="outline"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Re-run Pipeline for Selected Properties ({selectedProperties.length})
+          </Button>
         </div>
       )}
     </Card>

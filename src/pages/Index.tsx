@@ -272,6 +272,10 @@ const Index = () => {
                 properties={properties}
                 equipmentName={equipmentName}
                 modelNumber={modelNumber}
+                onRerunProperties={(selectedProperties) => {
+                  console.log('Re-running pipeline for:', selectedProperties);
+                  // Here you would implement the actual re-run logic
+                }}
               />
             </div>
           )}
