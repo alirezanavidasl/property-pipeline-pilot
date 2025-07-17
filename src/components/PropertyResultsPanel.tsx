@@ -73,23 +73,20 @@ export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber, o
       
       <div className="space-y-3">
         {properties.map((property, index) => {
-          const showCheckbox = property.confidence < 80;
           return (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3 flex-1">
-                {showCheckbox && (
-                  <Checkbox
-                    checked={selectedProperties.includes(property.name)}
-                    onCheckedChange={(checked) => handlePropertyToggle(property.name, checked as boolean)}
-                  />
-                )}
+                <Checkbox
+                  checked={selectedProperties.includes(property.name)}
+                  onCheckedChange={(checked) => handlePropertyToggle(property.name, checked as boolean)}
+                />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="font-medium text-gray-900">{property.name}</span>
                     {property.verified && (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     )}
-                    {showCheckbox && (
+                    {property.confidence < 80 && (
                       <Badge variant="outline" className="border-red-300 text-red-600 text-xs">
                         Low Confidence
                       </Badge>
