@@ -6,14 +6,19 @@ import { ScrapingStepsVisualization, ScrapingStep } from "@/components/ScrapingS
 import { PropertyResultsPanel, PropertyResult } from "@/components/PropertyResultsPanel";
 
 const Index = () => {
-  const [equipmentName, setEquipmentName] = useState("");
-  const [modelNumber, setModelNumber] = useState("");
+  const [equipmentName, setEquipmentName] = useState("Generator");
+  const [modelNumber, setModelNumber] = useState("XG-2000");
   const [isLoading, setIsLoading] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
   const [pipelines, setPipelines] = useState<PipelineData[]>([]);
   const [scrapingSteps, setScrapingSteps] = useState<ScrapingStep[]>([]);
   const [properties, setProperties] = useState<PropertyResult[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Initialize with demo data on component mount
+  useEffect(() => {
+    initializeMockData();
+  }, []);
 
   // Mock data for demonstration
   const initializeMockData = () => {
@@ -22,21 +27,21 @@ const Index = () => {
         id: "1",
         url: "https://www.manufacturer-specs.com/equipment/xg-2000",
         domain: "manufacturer-specs.com",
-        status: "processing",
-        confidence: 85,
-        propertiesFound: 12,
+        status: "completed",
+        confidence: 95,
+        propertiesFound: 15,
         estimatedTime: "2m 30s",
-        lastStep: "Extracting technical specifications..."
+        lastStep: "Extraction completed successfully"
       },
       {
         id: "2",
         url: "https://equipmentdb.industrial.com/models/xg2000",
         domain: "equipmentdb.industrial.com",
-        status: "pending",
-        confidence: 72,
-        propertiesFound: 8,
-        estimatedTime: "3m 15s",
-        lastStep: "Queued for processing"
+        status: "processing",
+        confidence: 78,
+        propertiesFound: 9,
+        estimatedTime: "1m 15s",
+        lastStep: "Processing technical specifications..."
       },
       {
         id: "3",
@@ -45,8 +50,8 @@ const Index = () => {
         status: "pending",
         confidence: 68,
         propertiesFound: 6,
-        estimatedTime: "4m 0s",
-        lastStep: "Waiting in queue"
+        estimatedTime: "3m 45s",
+        lastStep: "Queued for processing"
       }
     ];
 
@@ -60,33 +65,48 @@ const Index = () => {
         details: [
           "Detected manufacturer specification format",
           "Found technical data tables",
-          "Identified 3 potential property sections"
+          "Identified 3 potential property sections",
+          "Parsed HTML structure successfully"
         ]
       },
       {
         id: "2",
         title: "Content Extraction",
         description: "Extracting raw content from identified sections",
-        status: "processing",
+        status: "completed",
+        duration: "1.2s",
         details: [
-          "Processing specification tables...",
-          "Extracting product descriptions",
-          "Parsing technical drawings metadata"
+          "Extracted specification tables",
+          "Retrieved product descriptions",
+          "Parsed technical drawings metadata",
+          "Collected warranty information"
         ]
       },
       {
         id: "3",
         title: "Data Processing",
         description: "Processing and validating extracted properties",
-        status: "pending",
-        details: []
+        status: "completed",
+        duration: "0.9s",
+        details: [
+          "Normalized property values",
+          "Validated measurement units",
+          "Cross-referenced specifications",
+          "Applied data quality filters"
+        ]
       },
       {
         id: "4",
         title: "Quality Verification",
         description: "Cross-referencing and verifying property accuracy",
-        status: "pending",
-        details: []
+        status: "completed",
+        duration: "1.1s",
+        details: [
+          "Verified against known standards",
+          "Checked for data consistency",
+          "Applied confidence scoring",
+          "Flagged potential discrepancies"
+        ]
       }
     ];
 
@@ -125,19 +145,55 @@ const Index = () => {
         confidence: 92,
         source: "manufacturer-specs.com",
         verified: true
+      },
+      {
+        name: "Voltage Range",
+        value: "400-480V",
+        confidence: 89,
+        source: "manufacturer-specs.com",
+        verified: true
+      },
+      {
+        name: "Fuel Consumption",
+        value: "420 L/hr @ 100% load",
+        confidence: 83,
+        source: "manufacturer-specs.com",
+        verified: false
+      },
+      {
+        name: "Cooling System",
+        value: "Radiator & Fan",
+        confidence: 91,
+        source: "manufacturer-specs.com",
+        verified: true
+      },
+      {
+        name: "Starting System",
+        value: "Electric Start",
+        confidence: 94,
+        source: "manufacturer-specs.com",
+        verified: true
+      },
+      {
+        name: "Warranty Period",
+        value: "2 years / 2000 hours",
+        confidence: 76,
+        source: "manufacturer-specs.com",
+        verified: false
       }
     ];
 
     setPipelines(mockPipelines);
     setScrapingSteps(mockSteps);
     setProperties(mockProperties);
+    setCurrentStep(3); // Show all steps as completed
   };
 
   const handleScrape = () => {
     setIsLoading(true);
     setShowDetails(false);
     
-    // Initialize with mock data
+    // Reset and initialize with mock data
     initializeMockData();
     
     // Simulate scraping progression
@@ -167,26 +223,6 @@ const Index = () => {
           }
           return updated;
         });
-
-        // Update steps
-        setScrapingSteps(prev => {
-          const updated = [...prev];
-          const processing = updated.find(s => s.status === 'processing');
-          if (processing) {
-            // Simulate step completion
-            setTimeout(() => {
-              processing.status = 'completed';
-              processing.duration = '1.2s';
-              
-              const nextIndex = updated.findIndex(s => s.status === 'pending');
-              if (nextIndex !== -1) {
-                updated[nextIndex].status = 'processing';
-                setCurrentStep(nextIndex);
-              }
-            }, 3000);
-          }
-          return updated;
-        });
       }, 2000);
 
       // Clear interval after demo
@@ -208,7 +244,12 @@ const Index = () => {
       {pipelines.length > 0 && (
         <>
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Scraping Pipelines</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Scraping Pipelines</h2>
+              <div className="text-sm text-gray-600">
+                Found {pipelines.filter(p => p.status === 'completed').length} completed, {pipelines.filter(p => p.status === 'processing').length} processing
+              </div>
+            </div>
             <div className="grid gap-4">
               {pipelines.map((pipeline, index) => (
                 <PipelineCard
