@@ -72,24 +72,64 @@ export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber, o
       </div>
       
       <div className="space-y-3">
-        {properties.map((property, index) => (
-          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="font-medium text-gray-900">{property.name}</span>
-                {property.verified && (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+        {properties.map((property, index) => {
+          const showCheckbox = property.confidence < 80;
+          return (
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3 flex-1">
+                {showCheckbox && (
+                  <Checkbox
+                    checked={selectedProperties.includes(property.name)}
+                    onCheckedChange={(checked) => handlePropertyToggle(property.name, checked as boolean)}
+                  />
                 )}
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-medium text-gray-900">{property.name}</span>
+                    {property.verified && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                    {showCheckbox && (
+                      <Badge variant="outline" className="border-red-300 text-red-600 text-xs">
+                        Low Confidence
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">{property.value}</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className="text-xs text-gray-500">Source: {property.source}</span>
+                    <ExternalLink className="h-3 w-3 text-gray-400" />
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-600">{property.value}</p>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className="text-xs text-gray-500">Source: {property.source}</span>
-                <ExternalLink className="h-3 w-3 text-gray-400" />
+              
+              <Badge className={getConfidenceColor(property.confidence)}>
+                {property.confidence}%
+              </Badge>
+            </div>
+          );
+        })}
+        
+        {commonMissingProperties.map((propertyName) => (
+          <div key={propertyName} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="flex items-center space-x-3 flex-1">
+              <Checkbox
+                checked={selectedProperties.includes(propertyName)}
+                onCheckedChange={(checked) => handlePropertyToggle(propertyName, checked as boolean)}
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="font-medium text-gray-900">{propertyName}</span>
+                  <Badge variant="outline" className="border-orange-300 text-orange-600 text-xs">
+                    Missing
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-500 italic">Property not found - select to search again</p>
               </div>
             </div>
             
-            <Badge className={getConfidenceColor(property.confidence)}>
-              {property.confidence}%
+            <Badge className="bg-orange-100 text-orange-800">
+              N/A
             </Badge>
           </div>
         ))}
@@ -101,38 +141,10 @@ export const PropertyResultsPanel = ({ properties, equipmentName, modelNumber, o
         </div>
       )}
 
-      {feedbackProperties.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-md font-medium text-gray-800 mb-3">
-            Improve Results
-          </h4>
-          <p className="text-sm text-gray-600 mb-4">
-            Select properties to re-run the pipeline for better accuracy or missing data:
-          </p>
-          
-          <div className="space-y-2 mb-4">
-            {feedbackProperties.map((property) => (
-              <div key={property.name} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
-                <Checkbox
-                  checked={selectedProperties.includes(property.name)}
-                  onCheckedChange={(checked) => handlePropertyToggle(property.name, checked as boolean)}
-                />
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">{property.name}</span>
-                  <Badge 
-                    variant="outline" 
-                    className={`ml-2 ${property.type === 'missing' ? 'border-orange-300 text-orange-600' : 'border-red-300 text-red-600'}`}
-                  >
-                    {property.type === 'missing' ? 'Missing' : 'Low Confidence'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-          
+      {selectedProperties.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
           <Button 
             onClick={handleRerun}
-            disabled={selectedProperties.length === 0}
             className="w-full"
             variant="outline"
           >
